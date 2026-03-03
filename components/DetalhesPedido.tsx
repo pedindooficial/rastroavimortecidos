@@ -9,6 +9,12 @@ export function formatarMoeda(value: number): string {
   }).format(value);
 }
 
+/** Valores de itens podem ter sido salvos como 6885 (centavos) no passado; exibe em reais. */
+function valorItemParaExibicao(valor: number): number {
+  if (Number.isInteger(valor) && valor >= 100) return valor / 100;
+  return valor;
+}
+
 export function DetalhesPedido({
   pedido,
   mostrarStatusEntrega = true,
@@ -130,7 +136,7 @@ export function DetalhesPedido({
                     <td className="px-2 sm:px-4 py-2 font-mono text-xs">{item.codigo}</td>
                     <td className="px-2 sm:px-4 py-2">{item.produto}</td>
                     <td className="px-2 sm:px-4 py-2 text-right">{item.quantidade}</td>
-                    <td className="px-2 sm:px-4 py-2 text-right">{formatarMoeda(item.valor)}</td>
+                    <td className="px-2 sm:px-4 py-2 text-right">{formatarMoeda(valorItemParaExibicao(item.valor))}</td>
                   </tr>
                 ))}
               </tbody>

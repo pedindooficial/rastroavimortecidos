@@ -15,9 +15,15 @@ function encontrarValor(lines: string[], label: string): string {
   return l ? limparPrefixo(l, label).trim() : "";
 }
 
+/** Aceita "68.85" (ponto decimal) ou "257,61" / "1.257,61" (formato BR). */
 function parseMoeda(value: string): number {
   if (!value) return 0;
-  const limpo = value.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+  const limpo = value.replace(/[R$\s]/g, "").trim();
+  if (limpo.includes(",")) {
+    const br = limpo.replace(/\./g, "").replace(",", ".");
+    const n = Number(br);
+    return Number.isFinite(n) ? n : 0;
+  }
   const n = Number(limpo);
   return Number.isFinite(n) ? n : 0;
 }
