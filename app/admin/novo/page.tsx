@@ -6,85 +6,152 @@ import { useState } from "react";
 import { useAdminAuth } from "../AdminAuth";
 import type { PedidoInput, ItemCarrinho, HistoricoItem } from "@/lib/models";
 
-const emptyTransacao = {
-  status: "",
-  dataCompra: "",
-  dataSaldoDisponivel: "",
-  codigoTransacao: "",
-  numeroPedido: "",
-  totalBruto: 0,
-  totalPago: 0,
-  taxas: 0,
-  totalLiquido: 0,
-  formaPagamento: "",
-  modalidade: "",
-  vencimento: "",
-  pix: "",
-  reenviarPix: "",
-};
+function limparPrefixo(line: string, label: string): string {
+  return line.replace(label, "").trim();
+}
 
-const emptyCliente = {
-  nome: "",
-  email: "",
-  telefone: "",
-  cpfCnpj: "",
-  endereco: "",
-};
+function encontrarValor(lines: string[], label: string): string {
+  const l = lines.find((line) => line.startsWith(label));
+  return l ? limparPrefixo(l, label).trim() : "";
+}
 
-const emptyItem: ItemCarrinho = { codigo: "", produto: "", quantidade: 0, valor: 0 };
-const emptyHistorico: HistoricoItem = { data: "", status: "" };
+function parseMoeda(value: string): number {
+  if (!value) return 0;
+  const limpo = value.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+  const n = Number(limpo);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parseItens(lines: string[]): ItemCarrinho[] {
+  const itens: ItemCarrinho[] = [];
+  const startIndex = lines.findIndex((l) => l.startsWith("Cod. Produto"));
+  if (startIndex === -1) return itens;
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line || line.startsWith("Total do Carrinho")) break;
+
+    const parts = line.split(/\t+/);
+    if (parts.length < 4) continue;
+    const [codigo, produto, quantidadeStr, valorStr] = parts;
+    itens.push({
+      codigo: codigo.trim(),
+      produto: produto.trim(),
+      quantidade: Number(quantidadeStr.replace(",", ".")) || 0,
+      valor: parseMoeda(valorStr),
+    });
+  }
+
+  return itens;
+}
+
+function parseHistorico(lines: string[]): HistoricoItem[] {
+  const historico: HistoricoItem[] = [];
+  const startIndex = lines.findIndex((l) => l.startsWith("Data\tStatus"));
+  if (startIndex === -1) return historico;
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) break;
+    const parts = line.split(/\t+/);
+    if (parts.length < 2) continue;
+    const [data, status] = parts;
+    historico.push({ data: data.trim(), status: status.trim() });
+  }
+
+  return historico;
+}
+
+function parsePedidoFromTexto(texto: string): PedidoInput {
+  const lines = texto
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  if (!lines.length) {
+    throw new Error("Cole o conteúdo completo do pedido.");
+  }
+
+  const status = encontrarValor(lines, "Status:");
+  const dataCompra = encontrarValor(lines, "Data da compra:");
+  const dataSaldoDisponivel = encontrarValor(lines, "Data do Saldo disponível:");
+  const codigoTransacao = encontrarValor(lines, "Codigo da Transação:");
+  const numeroPedido = encontrarValor(lines, "Numero do Pedido:");
+  const totalBruto = parseMoeda(encontrarValor(lines, "Total Bruto:"));
+  const totalPago = parseMoeda(encontrarValor(lines, "Total Pago:"));
+  const taxas = parseMoeda(encontrarValor(lines, "Taxas:"));
+  const totalLiquido = parseMoeda(encontrarValor(lines, "Total Liquido:"));
+  const formaPagamento = encontrarValor(lines, "Forma de Pagamento:");
+  const modalidade = encontrarValor(lines, "Modalidade:");
+  const vencimento = encontrarValor(lines, "Vencimento:");
+  const pix = encontrarValor(lines, "PIX:");
+  const reenviarPix = encontrarValor(lines, "Reenviar PIX:");
+
+  const nome = encontrarValor(lines, "Nome:");
+  const email = encontrarValor(lines, "E-mail:");
+  const telefone = encontrarValor(lines, "Telefone:");
+  const cpfCnpj = encontrarValor(lines, "CPF/CNPJ:");
+  const endereco = encontrarValor(lines, "Endereço:");
+
+  const itens = parseItens(lines);
+  const totalCarrinho = parseMoeda(encontrarValor(lines, "Total do Carrinho:"));
+
+  let statusEntrega = "";
+  const idxEntregue = lines.findIndex((l) => l.startsWith("Entregue?"));
+  if (idxEntregue !== -1) {
+    const idxStatus = lines.findIndex(
+      (l, i) => i > idxEntregue && l.startsWith("Status:")
+    );
+    if (idxStatus !== -1 && lines[idxStatus + 1]) {
+      statusEntrega = lines[idxStatus + 1];
+    }
+  }
+
+  const historico = parseHistorico(lines);
+
+  if (!cpfCnpj || !numeroPedido) {
+    throw new Error("Não consegui encontrar CPF ou Número do Pedido no texto.");
+  }
+
+  const pedido: PedidoInput = {
+    transacao: {
+      status,
+      dataCompra,
+      dataSaldoDisponivel,
+      codigoTransacao,
+      numeroPedido,
+      totalBruto,
+      totalPago,
+      taxas,
+      totalLiquido,
+      formaPagamento,
+      modalidade,
+      vencimento,
+      pix,
+      reenviarPix,
+    },
+    cliente: {
+      nome,
+      email,
+      telefone,
+      cpfCnpj,
+      endereco,
+    },
+    itens,
+    totalCarrinho: totalCarrinho || totalPago || totalBruto,
+    statusEntrega: statusEntrega || "Selecione um status...",
+    historico,
+  };
+
+  return pedido;
+}
 
 export default function AdminNovoPage() {
   const router = useRouter();
   const { token } = useAdminAuth();
-  const [transacao, setTransacao] = useState(emptyTransacao);
-  const [cliente, setCliente] = useState(emptyCliente);
-  const [itens, setItens] = useState<ItemCarrinho[]>([{ ...emptyItem }]);
-  const [totalCarrinho, setTotalCarrinho] = useState(0);
-  const [statusEntrega, setStatusEntrega] = useState("");
-  const [historico, setHistorico] = useState<HistoricoItem[]>([{ ...emptyHistorico }]);
+  const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
-
-  function updateTransacao(field: string, value: string | number) {
-    setTransacao((p) => ({ ...p, [field]: value }));
-  }
-
-  function updateCliente(field: string, value: string) {
-    setCliente((p) => ({ ...p, [field]: value }));
-  }
-
-  function updateItem(i: number, field: keyof ItemCarrinho, value: string | number) {
-    setItens((prev) => {
-      const next = [...prev];
-      next[i] = { ...next[i], [field]: value };
-      return next;
-    });
-  }
-
-  function addItem() {
-    setItens((p) => [...p, { ...emptyItem }]);
-  }
-
-  function removeItem(i: number) {
-    setItens((p) => p.filter((_, idx) => idx !== i));
-  }
-
-  function updateHistorico(i: number, field: "data" | "status", value: string) {
-    setHistorico((prev) => {
-      const next = [...prev];
-      next[i] = { ...next[i], [field]: value };
-      return next;
-    });
-  }
-
-  function addHistorico() {
-    setHistorico((p) => [...p, { ...emptyHistorico }]);
-  }
-
-  function removeHistorico(i: number) {
-    setHistorico((p) => p.filter((_, idx) => idx !== i));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,26 +161,13 @@ export default function AdminNovoPage() {
       return;
     }
 
-    const pedido: PedidoInput = {
-      transacao: {
-        ...transacao,
-        totalBruto: Number(transacao.totalBruto) || 0,
-        totalPago: Number(transacao.totalPago) || 0,
-        taxas: Number(transacao.taxas) || 0,
-        totalLiquido: Number(transacao.totalLiquido) || 0,
-      },
-      cliente,
-      itens: itens
-        .filter((i) => i.codigo || i.produto || i.quantidade || i.valor)
-        .map((i) => ({
-          ...i,
-          quantidade: Number(i.quantidade) || 0,
-          valor: Number(i.valor) || 0,
-        })),
-      totalCarrinho: Number(totalCarrinho) || 0,
-      statusEntrega: statusEntrega || "Selecione um status...",
-      historico: historico.filter((h) => h.data || h.status),
-    };
+    let pedido: PedidoInput;
+    try {
+      pedido = parsePedidoFromTexto(texto);
+    } catch (err: any) {
+      setErro(err?.message || "Não foi possível interpretar o texto colado.");
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -153,201 +207,31 @@ export default function AdminNovoPage() {
           <Link href="/admin" className="text-slate-600 hover:underline">
             ← Voltar
           </Link>
-          <h1 className="text-lg font-semibold text-slate-800">Novo pedido (lead)</h1>
+          <h1 className="text-lg font-semibold text-slate-800">
+            Novo pedido (colar texto)
+          </h1>
         </div>
       </header>
 
       <main className="container max-w-3xl mx-auto px-4 py-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {erro && (
             <p className="text-red-600 bg-red-50 rounded-lg px-4 py-2">{erro}</p>
           )}
 
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">
-              Detalhes da Transação
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                ["status", "Status", "text"],
-                ["dataCompra", "Data da compra", "text"],
-                ["dataSaldoDisponivel", "Data do Saldo disponível", "text"],
-                ["codigoTransacao", "Código da Transação", "text"],
-                ["numeroPedido", "Número do Pedido", "text"],
-                ["totalBruto", "Total Bruto", "number"],
-                ["totalPago", "Total Pago", "number"],
-                ["taxas", "Taxas", "number"],
-                ["totalLiquido", "Total Líquido", "number"],
-                ["formaPagamento", "Forma de Pagamento", "text"],
-                ["modalidade", "Modalidade", "text"],
-                ["vencimento", "Vencimento", "text"],
-                ["pix", "PIX", "text"],
-                ["reenviarPix", "Reenviar PIX", "text"],
-              ].map(([key, label, type]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">
-                    {label}
-                  </label>
-                  <input
-                    type={type}
-                    value={transacao[key as keyof typeof transacao] ?? ""}
-                    onChange={(e) =>
-                      updateTransacao(
-                        key,
-                        type === "number"
-                          ? Number(e.target.value) || 0
-                          : e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800"
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">
-              Informações do Cliente
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                ["nome", "Nome"],
-                ["email", "E-mail"],
-                ["telefone", "Telefone"],
-                ["cpfCnpj", "CPF/CNPJ"],
-                ["endereco", "Endereço"],
-              ].map(([key, label]) => (
-                <div key={key} className={key === "endereco" ? "sm:col-span-2" : ""}>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">
-                    {label}
-                  </label>
-                  <input
-                    type="text"
-                    value={cliente[key as keyof typeof cliente] ?? ""}
-                    onChange={(e) => updateCliente(key, e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800"
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">
-              Itens do Carrinho
-            </h2>
-            {itens.map((item, i) => (
-              <div
-                key={i}
-                className="grid gap-3 sm:grid-cols-5 items-end mb-3 p-3 bg-slate-50 rounded-lg"
-              >
-                <input
-                  placeholder="Cód."
-                  value={item.codigo}
-                  onChange={(e) => updateItem(i, "codigo", e.target.value)}
-                  className="rounded border border-slate-300 px-3 py-2 text-sm"
-                />
-                <input
-                  placeholder="Produto"
-                  value={item.produto}
-                  onChange={(e) => updateItem(i, "produto", e.target.value)}
-                  className="sm:col-span-2 rounded border border-slate-300 px-3 py-2 text-sm"
-                />
-                <input
-                  type="number"
-                  placeholder="Qtd"
-                  value={item.quantidade || ""}
-                  onChange={(e) => updateItem(i, "quantidade", e.target.value)}
-                  className="rounded border border-slate-300 px-3 py-2 text-sm"
-                />
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Valor"
-                    value={item.valor || ""}
-                    onChange={(e) => updateItem(i, "valor", e.target.value)}
-                    className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeItem(i)}
-                    className="text-red-600 text-sm hover:underline"
-                  >
-                    Remover
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addItem}
-              className="text-pink-600 text-sm font-medium hover:underline"
-            >
-              + Adicionar item
-            </button>
-            <div className="mt-3">
-              <label className="block text-sm font-medium text-slate-600 mb-1">
-                Total do Carrinho (R$)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={totalCarrinho || ""}
-                onChange={(e) => setTotalCarrinho(Number(e.target.value) || 0)}
-                className="rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </div>
-          </section>
-
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <label className="block text-sm font-medium text-slate-600 mb-2">
-              Status da Entrega
-            </label>
-            <input
-              type="text"
-              value={statusEntrega}
-              onChange={(e) => setStatusEntrega(e.target.value)}
-              placeholder="Ex: Em separação, Enviado, Entregue"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          <section className="bg-white rounded-xl border border-slate-200 p-6 space-y-3">
+            <p className="text-sm text-slate-600">
+              Cole aqui o texto completo da página de detalhes do pedido
+              (começando em &quot;Detalhes da Transação&quot; até o
+              &quot;Histórico da Compra&quot;).
+            </p>
+            <textarea
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              rows={16}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono whitespace-pre-wrap"
+              placeholder="Cole aqui o texto copiado..."
             />
-          </section>
-
-          <section className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">
-              Histórico da Compra
-            </h2>
-            {historico.map((h, i) => (
-              <div key={i} className="flex gap-3 mb-3">
-                <input
-                  placeholder="Data"
-                  value={h.data}
-                  onChange={(e) => updateHistorico(i, "data", e.target.value)}
-                  className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
-                />
-                <input
-                  placeholder="Status"
-                  value={h.status}
-                  onChange={(e) => updateHistorico(i, "status", e.target.value)}
-                  className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeHistorico(i)}
-                  className="text-red-600 text-sm hover:underline"
-                >
-                  Remover
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addHistorico}
-              className="text-pink-600 text-sm font-medium hover:underline"
-            >
-              + Adicionar status
-            </button>
           </section>
 
           <div className="flex gap-4">
@@ -370,3 +254,4 @@ export default function AdminNovoPage() {
     </div>
   );
 }
+
