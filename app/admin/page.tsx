@@ -75,6 +75,9 @@ export default function AdminPage() {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <h1 className="text-base sm:text-lg font-semibold text-slate-800">Admin — Avimor Rastreio</h1>
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <Link href="/ligador" className="text-pink-600 font-medium hover:underline text-sm sm:text-base">
+              Ligador
+            </Link>
             <Link
               href="/admin/novo"
               className="text-pink-600 font-medium hover:underline text-sm sm:text-base"

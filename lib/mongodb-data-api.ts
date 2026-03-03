@@ -40,15 +40,32 @@ async function dataApiRequest<T>(appId: string, apiKey: string, action: string, 
   return res.json() as Promise<T>;
 }
 
-export async function dataApiFind(filter: object, sort?: object, limit = 100): Promise<unknown[]> {
+export async function dataApiFind(filter: object, sort?: object, limit = 100, collection = COLLECTION): Promise<unknown[]> {
   const config = getDataApiConfig();
   if (!config) throw new Error("MONGODB_DATA_API_APP_ID e MONGODB_DATA_API_KEY são obrigatórios para a Data API.");
 
   const body: { filter: object; sort?: object; limit: number } = { filter, limit };
   if (sort && Object.keys(sort).length > 0) body.sort = sort;
 
-  const result = await dataApiRequest<{ documents: unknown[] }>(config.appId, config.apiKey, "find", body);
+  const result = await dataApiRequest<{ documents: unknown[] }>(config.appId, config.apiKey, "find", { ...body, collection });
   return result.documents || [];
+}
+
+export async function dataApiUpdateOne(
+  filter: object,
+  update: object,
+  upsert = false,
+  collection = COLLECTION
+): Promise<{ modifiedCount: number; upsertedCount?: number }> {
+  const config = getDataApiConfig();
+  if (!config) throw new Error("MONGODB_DATA_API_APP_ID e MONGODB_DATA_API_KEY são obrigatórios para a Data API.");
+  const result = await dataApiRequest<{ modifiedCount: number; upsertedCount?: number }>(
+    config.appId,
+    config.apiKey,
+    "updateOne",
+    { filter, update: { $set: update }, upsert, collection }
+  );
+  return result;
 }
 
 export async function dataApiInsertOne(document: object): Promise<{ insertedId: string }> {
