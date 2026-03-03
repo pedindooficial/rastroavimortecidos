@@ -1,9 +1,9 @@
-import { AdminAuthProvider } from "@/app/admin/AdminAuth";
+import { LigadorAuthProvider } from "./LigadorAuth";
 
 export default function LigadorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminAuthProvider>{children}</AdminAuthProvider>;
+  return <LigadorAuthProvider>{children}</LigadorAuthProvider>;
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { useAdminAuth } from "@/app/admin/AdminAuth";
+import { useLigadorAuth } from "./LigadorAuth";
 
 const STATUS_OPCOES = [
   { value: "", label: "—" },
@@ -19,7 +19,7 @@ type ClienteLigador = {
 };
 
 export default function LigadorPage() {
-  const { token, login, logout, isReady } = useAdminAuth();
+  const { token, login, logout, isReady } = useLigadorAuth();
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState("");
   const [clientes, setClientes] = useState<ClienteLigador[]>([]);

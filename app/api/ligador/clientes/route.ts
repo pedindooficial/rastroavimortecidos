@@ -10,15 +10,15 @@ function normalizarCpf(value: string): string {
   return (value || "").replace(/\D/g, "");
 }
 
-function isAdminAuthorized(request: NextRequest): boolean {
-  const secret = process.env.ADMIN_SECRET;
+function isLigadorAuthorized(request: NextRequest): boolean {
+  const secret = process.env.LIGADOR_SECRET;
   if (!secret) return false;
   const auth = request.headers.get("authorization");
   return auth === `Bearer ${secret}`;
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
+  if (!isLigadorAuthorized(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
