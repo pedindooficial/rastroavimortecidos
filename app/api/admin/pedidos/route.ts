@@ -9,6 +9,8 @@ import type { PedidoInput } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
 
+const isVercel = process.env.VERCEL === "1";
+
 function normalizarCpf(value: string): string {
   return (value || "").replace(/\D/g, "");
 }
@@ -20,9 +22,23 @@ function isAdminAuthorized(request: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
+function dataApiRequiredResponse() {
+  return NextResponse.json(
+    {
+      error: "No Vercel use a Data API do MongoDB.",
+      detail:
+        "Adicione no Vercel (Environment Variables): MONGODB_DATA_API_APP_ID e MONGODB_DATA_API_KEY. Veja o README para ativar a Data API no Atlas e fazer redeploy.",
+    },
+    { status: 503 }
+  );
+}
+
 export async function GET(request: NextRequest) {
   if (!isAdminAuthorized(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+  if (isVercel && !isDataApiConfigured()) {
+    return dataApiRequiredResponse();
   }
   try {
     if (isDataApiConfigured()) {
@@ -49,6 +65,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!isAdminAuthorized(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+  if (isVercel && !isDataApiConfigured()) {
+    return dataApiRequiredResponse();
   }
   try {
     const body = (await request.json()) as PedidoInput;
