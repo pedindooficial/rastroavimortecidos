@@ -156,7 +156,7 @@ function RastreioContent() {
           {pedidos.map((p) => {
             const rawId = p._id as string | { $oid?: string } | undefined;
             const key = typeof rawId === "string" ? rawId : rawId?.$oid ?? String(rawId ?? "");
-            return <DetalhesPedido key={key} pedido={p} />;
+            return <DetalhesPedido key={key} pedido={p} mostrarStatusEntrega={false} />;
           })}
         </div>
       </main>

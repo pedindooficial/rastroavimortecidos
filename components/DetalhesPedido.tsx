@@ -9,7 +9,13 @@ export function formatarMoeda(value: number): string {
   }).format(value);
 }
 
-export function DetalhesPedido({ pedido }: { pedido: Pedido }) {
+export function DetalhesPedido({
+  pedido,
+  mostrarStatusEntrega = true,
+}: {
+  pedido: Pedido;
+  mostrarStatusEntrega?: boolean;
+}) {
   const t = pedido.transacao;
   const c = pedido.cliente;
 
@@ -135,11 +141,13 @@ export function DetalhesPedido({ pedido }: { pedido: Pedido }) {
           </p>
         </section>
 
-        <section>
-          <h3 className="font-semibold text-slate-800 mb-1 sm:mb-2 text-sm sm:text-base">Entregue?</h3>
-          <p className="text-xs sm:text-sm text-slate-500 mb-1">Status da entrega (somente visualização).</p>
-          <p className="text-slate-800 font-medium">{pedido.statusEntrega || "—"}</p>
-        </section>
+        {mostrarStatusEntrega && (
+          <section>
+            <h3 className="font-semibold text-slate-800 mb-1 sm:mb-2 text-sm sm:text-base">Entregue?</h3>
+            <p className="text-xs sm:text-sm text-slate-500 mb-1">Status da entrega (somente visualização).</p>
+            <p className="text-slate-800 font-medium">{pedido.statusEntrega || "—"}</p>
+          </section>
+        )}
 
         <section className="overflow-x-auto -mx-4 sm:mx-0">
           <h3 className="font-semibold text-slate-800 mb-2 sm:mb-3 text-sm sm:text-base px-4 sm:px-0">
