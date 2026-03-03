@@ -181,7 +181,10 @@ export default function AdminNovoPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErro(data.error || "Erro ao cadastrar.");
+        const msg = data.detail
+          ? `${data.error || "Erro"} — ${data.detail}`
+          : data.error || "Erro ao cadastrar.";
+        setErro(msg);
         return;
       }
       router.push("/admin");

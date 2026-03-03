@@ -28,9 +28,10 @@ export async function GET(request: NextRequest) {
       .toArray();
     return NextResponse.json(pedidos);
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error(err);
     return NextResponse.json(
-      { error: "Erro ao listar pedidos." },
+      { error: "Erro ao listar pedidos.", detail: msg },
       { status: 500 }
     );
   }
@@ -55,9 +56,10 @@ export async function POST(request: NextRequest) {
       message: "Pedido cadastrado com sucesso.",
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error(err);
     return NextResponse.json(
-      { error: "Erro ao cadastrar pedido." },
+      { error: "Erro ao cadastrar pedido.", detail: msg },
       { status: 500 }
     );
   }
