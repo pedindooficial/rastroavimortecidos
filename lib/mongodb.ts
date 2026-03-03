@@ -4,8 +4,8 @@ const options: MongoClientOptions = {
   serverSelectionTimeoutMS: 15000,
   maxPoolSize: 5,
   minPoolSize: 0,
-  // Evita erro SSL "tlsv1 alert internal error" em ambientes serverless (ex.: Vercel + Atlas)
-  autoSelectFamily: false,
+  // Força IPv4 para evitar erro SSL no Vercel + Atlas (IPv6 pode falhar no handshake TLS)
+  family: 4,
 };
 
 let clientPromise: Promise<MongoClient> | null = null;
