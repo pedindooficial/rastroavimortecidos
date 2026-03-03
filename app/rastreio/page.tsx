@@ -138,12 +138,6 @@ function RastreioContent() {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-3 sm:px-4 py-6 sm:py-8">
-        <Link
-          href="/"
-          className="inline-flex items-center text-xs sm:text-sm text-slate-600 hover:text-pink-600 mb-4 sm:mb-6"
-        >
-          ← Voltar e consultar outro CPF
-        </Link>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">
           Seus pedidos
         </h1>
