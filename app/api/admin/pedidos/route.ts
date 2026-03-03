@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import {
+  isDataApiConfigured,
+  dataApiFind,
+  dataApiInsertOne,
+} from "@/lib/mongodb-data-api";
 import type { PedidoInput } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +25,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
+    if (isDataApiConfigured()) {
+      const pedidos = await dataApiFind({}, { createdAt: -1 });
+      return NextResponse.json(pedidos);
+    }
     const db = await getDb();
     const pedidos = await db
       .collection("pedidos")
@@ -42,13 +51,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
   try {
-    const body = await request.json() as PedidoInput;
+    const body = (await request.json()) as PedidoInput;
     const cpfNorm = normalizarCpf(body.cliente.cpfCnpj || "");
     const doc = {
       ...body,
       cliente: { ...body.cliente, cpfNormalizado: cpfNorm },
       createdAt: new Date().toISOString(),
     };
+
+    if (isDataApiConfigured()) {
+      const result = await dataApiInsertOne(doc);
+      return NextResponse.json({
+        _id: result.insertedId,
+        message: "Pedido cadastrado com sucesso.",
+      });
+    }
+
     const db = await getDb();
     const result = await db.collection("pedidos").insertOne(doc);
     return NextResponse.json({

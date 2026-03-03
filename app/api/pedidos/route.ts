@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import {
+  isDataApiConfigured,
+  dataApiFind,
+} from "@/lib/mongodb-data-api";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +21,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = await getDb();
-    const colecao = db.collection("pedidos");
     const cpfNorm = normalizarCpf(cpf);
 
-    const pedidos = await colecao
+    if (isDataApiConfigured()) {
+      const pedidos = await dataApiFind(
+        {
+          $or: [
+            { "cliente.cpfNormalizado": cpfNorm },
+            { "cliente.cpfCnpj": cpfNorm },
+          ],
+        },
+        { "transacao.dataCompra": -1 }
+      );
+      return NextResponse.json(pedidos);
+    }
+
+    const db = await getDb();
+    const pedidos = await db
+      .collection("pedidos")
       .find({
         $or: [
           { "cliente.cpfNormalizado": cpfNorm },

@@ -63,9 +63,19 @@ Acesse [http://localhost:3000](http://localhost:3000). A área admin fica em [ht
 1. Envie o projeto para um repositório Git (GitHub, GitLab ou Bitbucket).
 2. No [Vercel](https://vercel.com), importe o repositório.
 3. Configure as variáveis de ambiente no projeto Vercel:
-   - `MONGODB_URI` — mesma URI do MongoDB Atlas.
+   - `MONGODB_URI` — mesma URI do MongoDB Atlas (usada localmente; no Vercel pode dar erro SSL).
    - `ADMIN_SECRET` — mesma senha usada localmente para o admin.
-4. Faça o deploy. O Vercel usará o comando `next build` automaticamente.
+4. **Se no Vercel aparecer erro de SSL ao conectar no MongoDB**, use a **MongoDB Data API** (conexão por HTTP):
+   - No [MongoDB Atlas](https://cloud.mongodb.com): menu lateral **App Services** (ou "Services") → **Create a new App** → nomeie o app e vincule ao seu cluster.
+   - No app criado: **Configure** → ative **Data API** (Enable Data API).
+   - Em **Authentication** → **API Keys** → **Create API Key** → copie a chave (só aparece uma vez).
+   - Copie o **App ID** (está na URL do app ou em App Settings).
+   - No Vercel, em Environment Variables, adicione:
+     - `MONGODB_DATA_API_APP_ID` = App ID do app
+     - `MONGODB_DATA_API_KEY` = API Key criada
+   - Opcional: `MONGODB_DATA_SOURCE` = `mongodb-atlas` (padrão; use outro nome se o app usar outro data source).
+   - Faça um **Redeploy**. A aplicação usará a Data API em vez da conexão TCP, evitando o erro SSL.
+5. Faça o deploy. O Vercel usará o comando `next build` automaticamente.
 
 Garanta que as imagens `public/logo.png` e `public/bg-header.png` estejam commitadas no repositório para aparecerem no site publicado.
 
@@ -77,7 +87,8 @@ Garanta que as imagens `public/logo.png` e `public/bg-header.png` estejam commit
 - `app/api/pedidos/route.ts` — GET por CPF (público).
 - `app/api/admin/pedidos/route.ts` — GET (listar) e POST (criar), protegido por `ADMIN_SECRET`.
 - `app/api/admin/login/route.ts` — POST para validar senha do admin.
-- `lib/mongodb.ts` — conexão com MongoDB.
+- `lib/mongodb.ts` — conexão com MongoDB (driver TCP).
+- `lib/mongodb-data-api.ts` — MongoDB Atlas Data API (HTTP), usada no Vercel quando `MONGODB_DATA_API_APP_ID` e `MONGODB_DATA_API_KEY` estão definidas.
 - `lib/models.ts` — tipos do pedido (transação, cliente, itens, histórico).
 
 ## Licença
