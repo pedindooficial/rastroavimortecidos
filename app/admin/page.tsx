@@ -71,51 +71,59 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center">
-        <h1 className="text-lg font-semibold text-slate-800">Admin — Avimor Rastreio</h1>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/novo"
-            className="text-pink-600 font-medium hover:underline"
-          >
-            Novo pedido
-          </Link>
-          <Link href="/" className="text-slate-600 text-sm hover:underline">
-            Ver site
-          </Link>
-          <button
-            onClick={logout}
-            className="text-slate-500 text-sm hover:text-slate-700"
-          >
-            Sair
-          </button>
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-4 py-3">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <h1 className="text-base sm:text-lg font-semibold text-slate-800">Admin — Avimor Rastreio</h1>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <Link
+              href="/admin/novo"
+              className="text-pink-600 font-medium hover:underline text-sm sm:text-base"
+            >
+              Novo pedido
+            </Link>
+            <Link href="/" className="text-slate-600 text-sm hover:underline">
+              Ver site
+            </Link>
+            <button
+              onClick={logout}
+              className="text-slate-500 text-sm hover:text-slate-700"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="container max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Pedidos cadastrados</h2>
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4">Pedidos cadastrados</h2>
         {carregando ? (
           <p className="text-slate-500">Carregando…</p>
         ) : pedidos.length === 0 ? (
           <p className="text-slate-500">Nenhum pedido cadastrado ainda.</p>
         ) : (
-          <ul className="space-y-3">
-            {pedidos.map((p) => (
-              <li
-                key={p._id}
-                className="bg-white rounded-lg border border-slate-200 p-4 flex justify-between items-center"
-              >
-                <div>
-                  <span className="font-medium text-slate-800">
-                    Pedido #{p.transacao.numeroPedido}
-                  </span>
-                  <span className="text-slate-500 text-sm ml-2">
-                    {p.cliente.nome} — {p.cliente.cpfCnpj}
-                  </span>
-                </div>
-                <span className="text-sm text-slate-500">{p.transacao.dataCompra}</span>
-              </li>
-            ))}
+          <ul className="space-y-2 sm:space-y-3">
+            {pedidos.map((p) => {
+              const rawId = p._id as string | { $oid?: string } | undefined;
+              const pedidoId = typeof rawId === "string" ? rawId : rawId?.$oid ?? String(rawId ?? "");
+              return (
+                <li key={pedidoId}>
+                  <Link
+                    href={`/admin/pedido/${pedidoId}`}
+                    className="block bg-white rounded-lg border border-slate-200 p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 hover:border-pink-300 hover:bg-pink-50/30 transition"
+                  >
+                    <div className="min-w-0">
+                      <span className="font-medium text-slate-800 block sm:inline">
+                        Pedido #{p.transacao.numeroPedido}
+                      </span>
+                      <span className="text-slate-500 text-xs sm:text-sm sm:ml-2 block sm:inline mt-0.5 sm:mt-0">
+                        {p.cliente.nome} — {p.cliente.cpfCnpj}
+                      </span>
+                    </div>
+                    <span className="text-xs sm:text-sm text-slate-500 shrink-0">Clique para ver detalhes · {p.transacao.dataCompra}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>

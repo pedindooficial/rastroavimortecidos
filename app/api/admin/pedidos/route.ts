@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import {
   isDataApiConfigured,
@@ -24,7 +25,26 @@ export async function GET(request: NextRequest) {
   if (!isAdminAuthorized(request)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
+  const id = request.nextUrl.searchParams.get("id");
   try {
+    if (id) {
+      if (isDataApiConfigured()) {
+        const docs = await dataApiFind({ _id: { $oid: id } }, undefined, 1);
+        const pedido = Array.isArray(docs) && docs.length > 0 ? docs[0] : null;
+        if (!pedido) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+        return NextResponse.json(pedido);
+      }
+      const db = await getDb();
+      let objId: ObjectId;
+      try {
+        objId = new ObjectId(id);
+      } catch {
+        return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+      }
+      const pedido = await db.collection("pedidos").findOne({ _id: objId });
+      if (!pedido) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+      return NextResponse.json({ ...pedido, _id: (pedido as { _id: ObjectId })._id.toString() });
+    }
     if (isDataApiConfigured()) {
       const pedidos = await dataApiFind({}, { createdAt: -1 });
       return NextResponse.json(pedidos);
@@ -35,7 +55,7 @@ export async function GET(request: NextRequest) {
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
-    return NextResponse.json(pedidos);
+    return NextResponse.json(pedidos.map((p) => ({ ...p, _id: (p as { _id?: ObjectId })._id?.toString() ?? p._id })));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(err);
