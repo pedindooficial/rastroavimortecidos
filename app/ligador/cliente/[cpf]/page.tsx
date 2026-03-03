@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { DetalhesPedido } from "@/components/DetalhesPedido";
-import { useAdminAuth } from "@/app/admin/AdminAuth";
+import { useLigadorAuth } from "@/app/ligador/LigadorAuth";
 import type { Pedido } from "@/lib/models";
 
 export default function LigadorClientePage() {
   const params = useParams();
   const cpf = (params.cpf as string) || "";
-  const { token, isReady } = useAdminAuth();
+  const { token, isReady } = useLigadorAuth();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
