@@ -138,17 +138,12 @@ function RastreioContent() {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-3 sm:px-4 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center text-xs sm:text-sm text-slate-600 hover:text-pink-600 order-2 sm:order-1"
-          >
-            ← Voltar e consultar outro CPF
-          </Link>
-          <p className="text-xs text-slate-500 order-1 sm:order-2">
-            Sessão válida por 24h. Ao fechar a aba você pode voltar aqui e continuar vendo seus pedidos.
-          </p>
-        </div>
+        <Link
+          href="/"
+          className="inline-flex items-center text-xs sm:text-sm text-slate-600 hover:text-pink-600 mb-4 sm:mb-6"
+        >
+          ← Voltar e consultar outro CPF
+        </Link>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">
           Seus pedidos
         </h1>
