@@ -7,8 +7,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const isVercel = process.env.VERCEL === "1";
-
 function normalizarCpf(value: string): string {
   return (value || "").replace(/\D/g, "");
 }
@@ -20,13 +18,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: "Informe um CPF válido com 11 dígitos." },
         { status: 400 }
-      );
-    }
-
-    if (isVercel && !isDataApiConfigured()) {
-      return NextResponse.json(
-        { error: "Consulta temporariamente indisponível. Tente mais tarde." },
-        { status: 503 }
       );
     }
 
