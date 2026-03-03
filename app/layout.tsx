@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Rastreio de Pedidos | Avimor Tecidos",
   description: "Acompanhe seus pedidos - Avimor tecidos.com.br",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
