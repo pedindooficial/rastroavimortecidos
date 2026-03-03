@@ -15,6 +15,7 @@ type ClienteLigador = {
   nome: string;
   cpf: string;
   telefone: string;
+  dataCompra: string;
   status: string;
 };
 
@@ -137,6 +138,7 @@ export default function LigadorPage() {
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Nome</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">CPF</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Telefone</th>
+                  <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Data da compra</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
                 </tr>
               </thead>
@@ -159,6 +161,9 @@ export default function LigadorPage() {
                       >
                         {c.telefone || "—"}
                       </a>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-slate-700 text-sm whitespace-nowrap">
+                      {c.dataCompra || "—"}
                     </td>
                     <td className="px-3 sm:px-4 py-2">
                       <select

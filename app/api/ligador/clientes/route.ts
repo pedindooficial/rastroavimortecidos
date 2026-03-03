@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
       pedidos = await db.collection("pedidos").find({}).sort({ createdAt: -1 }).limit(500).toArray();
     }
 
-    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string }>();
-    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string } }[]) {
+    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string; dataCompra: string }>();
+    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string }; transacao?: { dataCompra?: string } }[]) {
       const c = p.cliente;
       if (!c) continue;
       const cpfNorm = c.cpfNormalizado || normalizarCpf(c.cpfCnpj || "");
@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         nome: c.nome || "",
         cpf: c.cpfCnpj || cpfNorm,
         telefone: c.telefone || "",
+        dataCompra: p.transacao?.dataCompra || "",
       });
     }
 
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
       nome: dados.nome,
       cpf: dados.cpf,
       telefone: dados.telefone,
+      dataCompra: dados.dataCompra,
       status: statusMap.get(cpfNormalizado) || "",
     }));
 
