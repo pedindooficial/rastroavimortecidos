@@ -1,6 +1,12 @@
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, MongoClientOptions } from "mongodb";
 
-const options = {};
+const options: MongoClientOptions = {
+  serverSelectionTimeoutMS: 15000,
+  maxPoolSize: 5,
+  minPoolSize: 0,
+  // Evita erro SSL "tlsv1 alert internal error" em ambientes serverless (ex.: Vercel + Atlas)
+  autoSelectFamily: false,
+};
 
 let clientPromise: Promise<MongoClient> | null = null;
 
