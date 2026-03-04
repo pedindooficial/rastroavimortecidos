@@ -123,7 +123,7 @@ export default function AdminPage() {
                       </span>
                       {(p as { ligadorStatus?: string }).ligadorStatus ? (
                         <span className="inline-block mt-1 text-xs bg-slate-100 text-slate-600 rounded px-2 py-0.5">
-                          Ligador: {(p as { ligadorStatus: string }).ligadorStatus}
+                          Ligador: {(p as { ligadorStatus?: string }).ligadorStatus}
                         </span>
                       ) : null}
                     </div>
