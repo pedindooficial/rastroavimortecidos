@@ -121,6 +121,11 @@ export default function AdminPage() {
                       <span className="text-slate-500 text-xs sm:text-sm sm:ml-2 block sm:inline mt-0.5 sm:mt-0">
                         {p.cliente.nome} — {p.cliente.cpfCnpj}
                       </span>
+                      {(p as { ligadorStatus?: string }).ligadorStatus ? (
+                        <span className="inline-block mt-1 text-xs bg-slate-100 text-slate-600 rounded px-2 py-0.5">
+                          Ligador: {(p as { ligadorStatus: string }).ligadorStatus}
+                        </span>
+                      ) : null}
                     </div>
                     <span className="text-xs sm:text-sm text-slate-500 shrink-0">Clique para ver detalhes · {p.transacao.dataCompra}</span>
                   </Link>

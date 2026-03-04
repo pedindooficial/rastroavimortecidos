@@ -155,6 +155,13 @@ export function DetalhesPedido({
           </section>
         )}
 
+        {pedido.statusEntrega && pedido.statusEntrega.trim() !== "" && pedido.statusEntrega !== "Selecione um status..." && (
+          <section className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
+            <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Status da Entrega</h3>
+            <p className="text-slate-800 font-medium mt-1">{pedido.statusEntrega}</p>
+          </section>
+        )}
+
         <section className="overflow-x-auto -mx-4 sm:mx-0">
           <h3 className="font-semibold text-slate-800 mb-2 sm:mb-3 text-sm sm:text-base px-4 sm:px-0">
             Histórico da Compra
