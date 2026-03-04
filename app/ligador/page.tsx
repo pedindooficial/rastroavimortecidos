@@ -4,6 +4,15 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useLigadorAuth } from "./LigadorAuth";
 
+function IconCopiar({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16V4a2 2 0 0 1 2-2h12" />
+    </svg>
+  );
+}
+
 const STATUS_OPCOES = [
   { value: "", label: "—" },
   { value: "Subiu Sessão", label: "Subiu Sessão" },
@@ -25,6 +34,40 @@ export default function LigadorPage() {
   const [erro, setErro] = useState("");
   const [clientes, setClientes] = useState<ClienteLigador[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+
+  async function copiar(texto: string, id: string) {
+    if (!texto || texto === "—") return;
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiadoId(id);
+      setTimeout(() => setCopiadoId(null), 1500);
+    } catch {
+      setCopiadoId(null);
+    }
+  }
+
+  function BotaoCopiar({ valor, id }: { valor: string; id: string }) {
+    const label = valor || "—";
+    const vazio = !valor || valor === "—";
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!vazio) copiar(valor, id);
+        }}
+        className="ml-1.5 p-1 rounded text-slate-400 hover:text-pink-600 hover:bg-pink-50 transition inline-flex items-center shrink-0"
+        title="Copiar"
+        aria-label="Copiar"
+        disabled={vazio}
+      >
+        <IconCopiar className="w-4 h-4" />
+        {copiadoId === id && <span className="ml-1 text-xs text-green-600">Copiado!</span>}
+      </button>
+    );
+  }
 
   const carregarClientes = useCallback(() => {
     if (!token) return;
@@ -146,21 +189,32 @@ export default function LigadorPage() {
                 {clientes.map((c) => (
                   <tr key={c.cpfNormalizado} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                     <td className="px-3 sm:px-4 py-3">
-                      <Link
-                        href={`/ligador/cliente/${c.cpfNormalizado}`}
-                        className="font-medium text-pink-600 hover:underline block"
-                      >
-                        {c.nome || "—"}
-                      </Link>
+                      <span className="flex items-center gap-0 flex-wrap">
+                        <Link
+                          href={`/ligador/cliente/${c.cpfNormalizado}`}
+                          className="font-medium text-pink-600 hover:underline"
+                        >
+                          {c.nome || "—"}
+                        </Link>
+                        <BotaoCopiar valor={c.nome} id={`nome-${c.cpfNormalizado}`} />
+                      </span>
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-slate-700 text-sm">{c.cpf || "—"}</td>
                     <td className="px-3 sm:px-4 py-3">
-                      <a
-                        href={`tel:${c.telefone}`}
-                        className="text-slate-700 text-sm hover:text-pink-600"
-                      >
-                        {c.telefone || "—"}
-                      </a>
+                      <span className="flex items-center text-slate-700 text-sm">
+                        {c.cpf || "—"}
+                        <BotaoCopiar valor={c.cpf} id={`cpf-${c.cpfNormalizado}`} />
+                      </span>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3">
+                      <span className="flex items-center">
+                        <a
+                          href={`tel:${c.telefone}`}
+                          className="text-slate-700 text-sm hover:text-pink-600"
+                        >
+                          {c.telefone || "—"}
+                        </a>
+                        <BotaoCopiar valor={c.telefone} id={`tel-${c.cpfNormalizado}`} />
+                      </span>
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-slate-700 text-sm whitespace-nowrap">
                       {c.dataCompra || "—"}
