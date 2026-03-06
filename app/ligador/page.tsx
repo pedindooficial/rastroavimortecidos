@@ -17,6 +17,7 @@ const STATUS_OPCOES = [
   { value: "", label: "—" },
   { value: "Subiu Sessão", label: "Subiu Sessão" },
   { value: "Não Consegui Entrar em Contato", label: "Não Consegui Entrar em Contato" },
+  { value: "Chamado No Whatsapp", label: "Chamado No Whatsapp" },
 ];
 
 type ClienteLigador = {
