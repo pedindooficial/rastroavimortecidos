@@ -171,7 +171,7 @@ export default function LigadorPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4">Clientes para contato</h2>
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <p className="text-slate-600 text-sm">Clique no cliente para ver todos os pedidos. Altere o estado na lista conforme o contato.</p>
@@ -258,7 +258,7 @@ export default function LigadorPage() {
                         value={c.status}
                         onChange={(e) => alterarStatus(c.cpfNormalizado, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/20 outline-none min-w-[180px]"
+                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/20 outline-none min-w-[260px]"
                       >
                         {STATUS_OPCOES.map((opt) => (
                           <option key={opt.value || "vazio"} value={opt.value}>
