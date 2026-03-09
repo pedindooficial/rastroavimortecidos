@@ -30,18 +30,25 @@ export async function GET(request: NextRequest) {
       pedidos = await db.collection("pedidos").find({}).sort({ createdAt: -1 }).limit(500).toArray();
     }
 
-    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string; dataCompra: string }>();
-    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string }; transacao?: { dataCompra?: string } }[]) {
+    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string; dataCompra: string; totalPedidos: number }>();
+    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string }; transacao?: { dataCompra?: string; totalPago?: number }; totalCarrinho?: number }[]) {
       const c = p.cliente;
       if (!c) continue;
       const cpfNorm = c.cpfNormalizado || normalizarCpf(c.cpfCnpj || "");
-      if (!cpfNorm || cpfMap.has(cpfNorm)) continue;
-      cpfMap.set(cpfNorm, {
-        nome: c.nome || "",
-        cpf: c.cpfCnpj || cpfNorm,
-        telefone: c.telefone || "",
-        dataCompra: p.transacao?.dataCompra || "",
-      });
+      if (!cpfNorm) continue;
+      const valorPedido = p.transacao?.totalPago ?? p.totalCarrinho ?? 0;
+      const existing = cpfMap.get(cpfNorm);
+      if (existing) {
+        existing.totalPedidos += valorPedido;
+      } else {
+        cpfMap.set(cpfNorm, {
+          nome: c.nome || "",
+          cpf: c.cpfCnpj || cpfNorm,
+          telefone: c.telefone || "",
+          dataCompra: p.transacao?.dataCompra || "",
+          totalPedidos: valorPedido,
+        });
+      }
     }
 
     let statusMap = new Map<string, string>();
@@ -64,6 +71,7 @@ export async function GET(request: NextRequest) {
       cpf: dados.cpf,
       telefone: dados.telefone,
       dataCompra: dados.dataCompra,
+      totalPedidos: Math.round(dados.totalPedidos * 100) / 100,
       status: statusMap.get(cpfNormalizado) || "",
     }));
 

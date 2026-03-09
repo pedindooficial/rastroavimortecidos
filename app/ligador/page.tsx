@@ -26,8 +26,11 @@ type ClienteLigador = {
   cpf: string;
   telefone: string;
   dataCompra: string;
+  totalPedidos: number;
   status: string;
 };
+
+type Ordenacao = "padrao" | "menor_preco" | "maior_preco";
 
 export default function LigadorPage() {
   const { token, login, logout, isReady } = useLigadorAuth();
@@ -36,6 +39,7 @@ export default function LigadorPage() {
   const [clientes, setClientes] = useState<ClienteLigador[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("padrao");
 
   async function copiar(texto: string, id: string) {
     if (!texto || texto === "—") return;
@@ -169,7 +173,26 @@ export default function LigadorPage() {
 
       <main className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4">Clientes para contato</h2>
-        <p className="text-slate-600 text-sm mb-4">Clique no cliente para ver todos os pedidos. Altere o estado na lista conforme o contato.</p>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <p className="text-slate-600 text-sm">Clique no cliente para ver todos os pedidos. Altere o estado na lista conforme o contato.</p>
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-slate-500">Ordenar:</span>
+            <button
+              type="button"
+              onClick={() => setOrdenacao(ordenacao === "menor_preco" ? "padrao" : "menor_preco")}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition font-medium ${ordenacao === "menor_preco" ? "bg-pink-600 text-white border-pink-600" : "bg-white text-slate-700 border-slate-300 hover:border-pink-400"}`}
+            >
+              Menor valor
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrdenacao(ordenacao === "maior_preco" ? "padrao" : "maior_preco")}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition font-medium ${ordenacao === "maior_preco" ? "bg-pink-600 text-white border-pink-600" : "bg-white text-slate-700 border-slate-300 hover:border-pink-400"}`}
+            >
+              Maior valor
+            </button>
+          </div>
+        </div>
         {carregando ? (
           <p className="text-slate-500">Carregando…</p>
         ) : clientes.length === 0 ? (
@@ -182,12 +205,17 @@ export default function LigadorPage() {
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Nome</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">CPF</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Telefone</th>
+                  <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Valor</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Data da compra</th>
                   <th className="px-3 sm:px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {clientes.map((c) => (
+                {[...clientes].sort((a, b) => {
+                  if (ordenacao === "menor_preco") return a.totalPedidos - b.totalPedidos;
+                  if (ordenacao === "maior_preco") return b.totalPedidos - a.totalPedidos;
+                  return 0;
+                }).map((c) => (
                   <tr key={c.cpfNormalizado} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                     <td className="px-3 sm:px-4 py-3">
                       <span className="flex items-center gap-0 flex-wrap">
@@ -216,6 +244,11 @@ export default function LigadorPage() {
                         </a>
                         <BotaoCopiar valor={c.telefone} id={`tel-${c.cpfNormalizado}`} />
                       </span>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-slate-700 text-sm font-medium whitespace-nowrap">
+                      {c.totalPedidos > 0
+                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(c.totalPedidos)
+                        : "—"}
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-slate-700 text-sm whitespace-nowrap">
                       {c.dataCompra || "—"}
