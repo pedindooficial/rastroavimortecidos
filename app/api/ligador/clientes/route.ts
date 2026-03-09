@@ -30,23 +30,31 @@ export async function GET(request: NextRequest) {
       pedidos = await db.collection("pedidos").find({}).sort({ createdAt: -1 }).limit(500).toArray();
     }
 
-    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string; dataCompra: string; totalPedidos: number }>();
-    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string }; transacao?: { dataCompra?: string; totalPago?: number }; totalCarrinho?: number }[]) {
+    type CompraResumo = { numeroPedido: string; dataCompra: string; totalPago: number; status: string };
+    const cpfMap = new Map<string, { nome: string; cpf: string; telefone: string; totalPedidos: number; compras: CompraResumo[] }>();
+    for (const p of pedidos as { cliente?: { cpfNormalizado?: string; cpfCnpj?: string; nome?: string; telefone?: string }; transacao?: { dataCompra?: string; totalPago?: number; numeroPedido?: string; status?: string }; totalCarrinho?: number }[]) {
       const c = p.cliente;
       if (!c) continue;
       const cpfNorm = c.cpfNormalizado || normalizarCpf(c.cpfCnpj || "");
       if (!cpfNorm) continue;
       const valorPedido = p.transacao?.totalPago ?? p.totalCarrinho ?? 0;
+      const compra: CompraResumo = {
+        numeroPedido: p.transacao?.numeroPedido || "",
+        dataCompra: p.transacao?.dataCompra || "",
+        totalPago: valorPedido,
+        status: p.transacao?.status || "",
+      };
       const existing = cpfMap.get(cpfNorm);
       if (existing) {
         existing.totalPedidos += valorPedido;
+        existing.compras.push(compra);
       } else {
         cpfMap.set(cpfNorm, {
           nome: c.nome || "",
           cpf: c.cpfCnpj || cpfNorm,
           telefone: c.telefone || "",
-          dataCompra: p.transacao?.dataCompra || "",
           totalPedidos: valorPedido,
+          compras: [compra],
         });
       }
     }
@@ -70,8 +78,8 @@ export async function GET(request: NextRequest) {
       nome: dados.nome,
       cpf: dados.cpf,
       telefone: dados.telefone,
-      dataCompra: dados.dataCompra,
       totalPedidos: Math.round(dados.totalPedidos * 100) / 100,
+      compras: dados.compras,
       status: statusMap.get(cpfNormalizado) || "",
     }));
 
